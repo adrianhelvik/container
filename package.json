@@ -8,8 +8,8 @@
     "url": "https://github.com/adrianhelvik/container"
   },
   "scripts": {
-    "test": "jest --coverage",
-    "test:watch": "jest --watch",
+    "test": "jest --watch",
+    "test:coverage": "jest --coverage",
     "coveralls": "cat ./coverage/lcov.info | coveralls"
   },
   "author": "",
