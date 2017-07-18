@@ -57,6 +57,23 @@ describe('Container', () => {
         done()
       })
     })
+
+    it('can can be awaited', async () => {
+      let called = false
+      await container.invoke(() => {
+        called = true
+      })
+      expect(called).toBe(true)
+    })
+
+    it('awaits async functions', async () => {
+      let called = false
+      await container.invoke(async () => {
+        await new Promise(resolve => setTimeout(resolve, 10))
+        called = true
+      })
+      expect(called).toBe(true)
+    })
   })
 
   describe('.provider(key, provider)', () => {
