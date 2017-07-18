@@ -165,11 +165,47 @@ describe('Container', () => {
     expect(container.dependencies.hasOwnProperty).not.toBeDefined()
   })
 
+  test('hasOwnProperty is not in the providers by default', () => {
+    expect(container.providers.hasOwnProperty).not.toBeDefined()
+  })
+
   test('Object.keys returns keys for all values in the container', () => {
     container.constant('a', null)
     container.provider('b', () => {})
     container.eagerProvider('c', () => {})
 
     expect(Object.keys(container.dependencies).sort()).toEqual(['a', 'b', 'c'])
+  })
+
+  describe('.providers', () => {
+    test('you can access the providers (not the provider results) from the container', () => {
+      let count = 0
+      container.provider('foo', () => ++count)
+
+      container.dependencies.foo
+      container.dependencies.foo
+      container.dependencies.foo
+
+      const updatedCount = container.providers.foo()
+
+      expect(count).toBe(2)
+      expect(updatedCount).toBe(2)
+    })
+
+    test('you can access the providers (not the provider results) from a child container', () => {
+      let count = 0
+      container.provider('foo', () => ++count)
+
+      container.dependencies.foo
+      container.dependencies.foo
+      container.dependencies.foo
+
+      const childContainer = container.extend()
+
+      const updatedCount = childContainer.providers.foo()
+
+      expect(count).toBe(2)
+      expect(updatedCount).toBe(2)
+    })
   })
 })
