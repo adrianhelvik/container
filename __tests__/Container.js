@@ -147,4 +147,12 @@ describe('Container', () => {
   test('hasOwnProperty is not in the dependencies by default', () => {
     expect(container.dependencies.hasOwnProperty).not.toBeDefined()
   })
+
+  test('Object.keys returns keys for all values in the container', () => {
+    container.constant('a', null)
+    container.provider('b', () => {})
+    container.eagerProvider('c', () => {})
+
+    expect(Object.keys(container.dependencies).sort()).toEqual(['a', 'b', 'c'])
+  })
 })
