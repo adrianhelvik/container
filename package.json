@@ -4,11 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest --watch"
+    "test": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "coveralls": "cat ./coverage/lcov.info | coveralls"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "coveralls": "^2.13.1",
     "jest": "^20.0.4"
   }
 }
