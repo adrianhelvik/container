@@ -66,6 +66,17 @@ describe('Container', () => {
       expect(called).toBe(true)
     })
 
+    it('rethrows async errors', async () => {
+      try {
+        await container.invoke(async () => {
+          throw Error('Async error')
+        })
+      } catch (e) {
+        var error = e.message
+      }
+      expect(error).toBe('Async error')
+    })
+
     it('awaits async functions', async () => {
       let called = false
       await container.invoke(async () => {
