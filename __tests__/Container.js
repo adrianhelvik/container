@@ -39,6 +39,23 @@ describe('Container', () => {
       expect(parent.dependencies.dep).toBe(inParent)
       expect(child.dependencies.dep).toBe(inChild)
     })
+
+    it('throws an error if the value exists', () => {
+      container.constant('foo', 1)
+      expect(() => container.constant('foo', 2)).toThrow(TypeError)
+    })
+  })
+
+  describe('redefineConstant', () => {
+    it('redefines the constant in the container', () => {
+      container.constant('foo', 1)
+      expect(() => container.redefineConstant('foo', 2)).not.toThrow()
+      expect(container.dependencies.foo).toBe(2)
+    })
+
+    it('throws an error if the container does not have the value', () => {
+      expect(() => container.redefineConstant('foo', 1)).toThrow(TypeError)
+    })
   })
 
   describe('invoke(fn)', () => {
@@ -173,6 +190,25 @@ describe('Container', () => {
 
       expect(parent.dependencies.dependency).toBe(inParent)
       expect(child.dependencies.dependency).toBe(inChild)
+    })
+
+    it('throws an error if redifining existing dependency', () => {
+      container.provider('foo', () => {})
+      expect(() => {
+        container.provider('foo', () => {})
+      }).toThrow(TypeError)
+    })
+  })
+
+  describe('redefineProvider(key, provider)', () => {
+    it('redefines a provider', () => {
+      container.provider('foo', () => 1)
+      expect(() => container.redefineProvider('foo', () => 2)).not.toThrow()
+      expect(container.dependencies.foo).toBe(2)
+    })
+
+    it('throws an error if the container does not have the value', () => {
+      expect(() => container.redefineProvider('foo', () => 1)).toThrow(TypeError)
     })
   })
 
