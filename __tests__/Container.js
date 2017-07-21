@@ -1,3 +1,4 @@
+const mock = require('@adrianhelvik/mock')
 const Container = require('../lib/Container')
 
 describe('Container', () => {
@@ -209,6 +210,27 @@ describe('Container', () => {
 
     it('throws an error if the container does not have the value', () => {
       expect(() => container.redefineProvider('foo', () => 1)).toThrow(TypeError)
+    })
+  })
+
+  describe('reloadProvider(key)', () => {
+    it('reloads a provider', () => {
+      const oldDb = mock()
+      const newDb = mock()
+      let counter = 0
+
+      container.constant('db', oldDb)
+      container.provider('myProvider', ({ db }) => {
+        db(++counter)
+      })
+
+      container.dependencies.myProvider
+      container.redefineConstant('db', newDb)
+      container.reloadProvider('myProvider')
+      container.dependencies.myProvider
+
+      expect(oldDb.$args[0]).toEqual([1])
+      expect(newDb.$args[0]).toEqual([2])
     })
   })
 
