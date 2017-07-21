@@ -11,6 +11,34 @@ describe('Container', () => {
       container.constant('message', 'Hello world')
       expect(container.dependencies.message).toBe('Hello world')
     })
+
+    it('can shadow a dependency in the parent container', () => {
+      const parent = new Container()
+      const child = parent.extend()
+
+      const inParent = 'In parent'
+      const inChild = 'In child'
+
+      parent.constant('dep', inParent)
+      child.constant('dep', inChild)
+
+      expect(parent.dependencies.dep).toBe(inParent)
+      expect(child.dependencies.dep).toBe(inChild)
+    })
+
+    it('can shadow a provider in the parent container', () => {
+      const parent = new Container()
+      const child = parent.extend()
+
+      const inParent = 'In parent'
+      const inChild = 'In child'
+
+      parent.provider('dep', () => inParent)
+      child.constant('dep', inChild)
+
+      expect(parent.dependencies.dep).toBe(inParent)
+      expect(child.dependencies.dep).toBe(inChild)
+    })
   })
 
   describe('invoke(fn)', () => {
@@ -117,6 +145,34 @@ describe('Container', () => {
           done()
         })
       })
+    })
+
+    it('can shadow a provider that exists in a parent', () => {
+      const parent = new Container()
+      const child = parent.extend()
+
+      const inParent = 'In parent'
+      const inChild = 'In child'
+
+      parent.provider('dependency', () => inParent)
+      child.provider('dependency', () => inChild)
+
+      expect(parent.dependencies.dependency).toBe(inParent)
+      expect(child.dependencies.dependency).toBe(inChild)
+    })
+
+    it('can shadow a constant in a parent', () => {
+      const parent = new Container()
+      const child = parent.extend()
+
+      const inParent = 'In parent'
+      const inChild = 'In child'
+
+      parent.constant('dependency', inParent)
+      child.provider('dependency', () => inChild)
+
+      expect(parent.dependencies.dependency).toBe(inParent)
+      expect(child.dependencies.dependency).toBe(inChild)
     })
   })
 
