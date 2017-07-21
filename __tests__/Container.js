@@ -234,6 +234,27 @@ describe('Container', () => {
     })
   })
 
+  describe('reloadAllProviders()', () => {
+    test('it reloads a provider', () => {
+      const oldDb = mock()
+      const newDb = mock()
+      let counter = 0
+
+      container.constant('db', oldDb)
+      container.provider('myProvider', ({ db }) => {
+        db(++counter)
+      })
+
+      container.dependencies.myProvider
+      container.redefineConstant('db', newDb)
+      container.reloadAllProviders()
+      container.dependencies.myProvider
+
+      expect(oldDb.$args[0]).toEqual([1])
+      expect(newDb.$args[0]).toEqual([2])
+    })
+  })
+
   describe('.eagerProvider(key, value)', () => {
     it('stores a provider in the container', () => {
       container.eagerProvider('foo', () => 'bar')
