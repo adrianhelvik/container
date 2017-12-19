@@ -17,6 +17,15 @@ Adds a new value to the container in the form of a constant value.
 ## Container.prototype.invoke(fn: function)
 Invoke the given function with the dependencies in the container.
 
+```javascript
+container.provider('message', ({ who }) => 'Hello ' + who)
+container.constant('who', 'world')
+
+container.invoke(({ message }) => {
+  console.log(message) // logs 'Hello world'
+})
+```
+
 ## Cyclic dependencies
 Cyclic dependencies can be resolved with the invoke function.
 It is however a very good idea to prevent cyclic dependencies
