@@ -1,6 +1,6 @@
 {
   "name": "@adrianhelvik/container",
-  "version": "1.7.0",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
   "repository": {
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "jest --coverage",
-    "test:watch": "jest --watch",
+    "start": "jest --watch",
     "coveralls": "cat ./coverage/lcov.info | coveralls"
   },
   "author": "",

@@ -66,12 +66,12 @@ describe('Container', () => {
       })
     })
 
-    it('calls functions asynchronously', () => {
+    it('calls functions synchronously', () => {
       let called = false
       container.invoke(() => {
         called = true
       })
-      expect(called).toBe(false)
+      expect(called).toBe(true)
     })
 
     it('provides the dependencies of the container', (done) => {
@@ -353,5 +353,29 @@ describe('Container', () => {
       expect(count).toBe(2)
       expect(updatedCount).toBe(2)
     })
+  })
+
+  it('can inject dependencies later to handle cyclic relations', async () => {
+    container.provider('foo', ({ provide }) => {
+      let _bar
+
+      provide(({ bar }) => {
+        _bar = bar
+      })
+
+      return {
+        getBar() {
+          return _bar
+        },
+      }
+    })
+    container.provider('bar', ({ foo }) => {
+      return 20
+    })
+
+    let result
+
+    result = container.invoke(({ foo }) => foo)
+    expect(result.getBar()).toBe(20)
   })
 })
