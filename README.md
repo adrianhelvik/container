@@ -17,6 +17,32 @@ Adds a new value to the container in the form of a constant value.
 ## Container.prototype.invoke(fn: function)
 Invoke the given function with the dependencies in the container.
 
+## Cyclic dependencies
+Cyclic dependencies can be resolved with the invoke function.
+It is however a very good idea to prevent cyclic dependencies
+in the first place.
+
+```javascript
+container.provider('foo', ({ invoke }) => {
+  return {
+    bar: () => invoke(({ bar }) => bar)
+  }
+})
+
+container.provider('bar', ({ invoke }) => {
+  return {
+    foo: () => invoke(({ foo }) => foo)
+  }
+})
+
+container.invoke(({ foo, bar }) => {
+  expect(foo.bar()).toBe(bar)
+  expect(bar.foo()).toBe(foo)
+})
+```
+
+# Example
+
 ```javascript
 import Container from '@adrianhelvik/container'
 
@@ -27,9 +53,13 @@ container.provider('foo', () => {
   return 10
 })
 
+container.constant('bar', 'Hello world')
+
 // The dependency 'foo' is now injected into
 // the function and the provider for foo is
 // called.
-container.invoke(({ foo }) => {
+container.invoke(({ foo, bar }) => {
+  assert.equal(foo, 10)
+  assert.equal(bar, 'Hello world')
 })
 ```

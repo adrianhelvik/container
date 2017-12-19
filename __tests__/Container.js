@@ -356,26 +356,21 @@ describe('Container', () => {
   })
 
   it('can inject dependencies later to handle cyclic relations', async () => {
-    container.provider('foo', ({ provide }) => {
-      let _bar
-
-      provide(({ bar }) => {
-        _bar = bar
-      })
-
+    container.provider('foo', ({ invoke }) => {
       return {
-        getBar() {
-          return _bar
-        },
+        bar: () => invoke(({ bar }) => bar)
       }
     })
-    container.provider('bar', ({ foo }) => {
-      return 20
+
+    container.provider('bar', ({ invoke }) => {
+      return {
+        foo: () => invoke(({ foo }) => foo)
+      }
     })
 
-    let result
-
-    result = container.invoke(({ foo }) => foo)
-    expect(result.getBar()).toBe(20)
+    container.invoke(({ foo, bar }) => {
+      expect(foo.bar()).toBe(bar)
+      expect(bar.foo()).toBe(foo)
+    })
   })
 })
