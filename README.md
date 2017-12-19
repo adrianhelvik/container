@@ -21,6 +21,7 @@ Invoke the given function with the dependencies in the container.
 import Container from '@adrianhelvik/container'
 
 const container = new Container()
+
 container.provider('foo', () => {
   console.log('foo injected')
   return 10
