@@ -54,9 +54,14 @@ childContainer.invoke(({ foo }) => {
 
 ## Container.prototype.keys()
 Returns the names of the dependencies in the current
-container. Does not include
+container. Does not include the keys of any parent container.
 
 ```javascript
+container.provider('foo', () => 42)
+const childContainer = container.extend()
+childContainer.provider('bar', () => 43)
+
+expect(childContainer.keys()).toEqual(['bar'])
 ```
 
 ## Cyclic dependencies
