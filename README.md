@@ -18,12 +18,45 @@ Adds a new value to the container in the form of a constant value.
 Invoke the given function with the dependencies in the container.
 
 ```javascript
+const container = new Container()
 container.provider('message', ({ who }) => 'Hello ' + who)
 container.constant('who', 'world')
 
 container.invoke(({ message }) => {
   console.log(message) // logs 'Hello world'
 })
+```
+
+## Container.prototype.extend()
+Create a container that extends from the current one.
+Dependencies from the child container are preferred.
+The child container will lookup dependencies in the
+parent container if no matching dependency is found
+in the parent container.
+
+```javascript
+const container = new Container()
+container.provider('foo', () => 42)
+const childContainer = container.extend()
+childContainer.provider('bar', () => 43)
+
+childContainer.invoke(({ foo, bar }) => {
+  expect(foo).toBe(42)
+  expect(bar).toBe(43)
+})
+
+childContainer.provider('foo', () => 44)
+
+childContainer.invoke(({ foo }) => {
+  expect(foo).toBe(44)
+})
+```
+
+## Container.prototype.keys()
+Returns the names of the dependencies in the current
+container. Does not include
+
+```javascript
 ```
 
 ## Cyclic dependencies

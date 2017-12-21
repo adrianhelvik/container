@@ -373,4 +373,32 @@ describe('Container', () => {
       expect(bar.foo()).toBe(foo)
     })
   })
+
+  describe('.keys()', () => {
+    it('returns the keys in the current container', () => {
+      container.provider('foo', () => 42)
+      const childContainer = container.extend()
+      childContainer.provider('bar', () => 43)
+
+      expect(childContainer.keys()).toEqual(['bar'])
+    })
+  })
+
+  test('docs: Container.prototype.extend', () => {
+    const container = new Container()
+    container.provider('foo', () => 42)
+    const childContainer = container.extend()
+    childContainer.provider('bar', () => 43)
+
+    childContainer.invoke(({ foo, bar }) => {
+      expect(foo).toBe(42)
+      expect(bar).toBe(43)
+    })
+
+    childContainer.provider('foo', () => 44)
+
+    childContainer.invoke(({ foo }) => {
+      expect(foo).toBe(44)
+    })
+  })
 })
