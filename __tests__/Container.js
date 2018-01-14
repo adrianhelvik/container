@@ -402,7 +402,7 @@ describe('Container', () => {
     })
   })
 
-  describe('.get(dependency)', () => {
+  describe('.get(key)', () => {
     it('gets provider values', () => {
       const container = new Container()
       container.provider('foo', () => 42)
@@ -416,7 +416,7 @@ describe('Container', () => {
     })
   })
 
-  describe('.has(dependency)', () => {
+  describe('.has(key)', () => {
     it('checks if provided values exist', () => {
       const container = new Container()
       container.provider('foo', () => undefined)
@@ -429,6 +429,7 @@ describe('Container', () => {
       container.provider('foo', () => {
         called = true
       })
+      container.has('foo')
       expect(called).toBe(false)
     })
 
@@ -436,6 +437,44 @@ describe('Container', () => {
       const container = new Container()
       container.constant('foo', 42)
       expect(container.has('foo')).toBe(true)
+    })
+
+    it('checks if parent containers have the value', () => {
+      const container = new Container()
+      const child = container.extend()
+      container.constant('foo', 42)
+      expect(child.has('foo')).toBe(true)
+    })
+  })
+
+  describe('.hasOwn(key)', () => {
+    it('checks if provided values exist', () => {
+      const container = new Container()
+      container.provider('foo', () => undefined)
+      expect(container.hasOwn('foo')).toBe(true)
+    })
+
+    it('does not call the provider', () => {
+      const container = new Container()
+      let called = false
+      container.provider('foo', () => {
+        called = true
+      })
+      container.hasOwn('foo')
+      expect(called).toBe(false)
+    })
+
+    it('checks if constant values exist', () => {
+      const container = new Container()
+      container.constant('foo', 42)
+      expect(container.hasOwn('foo')).toBe(true)
+    })
+
+    it('does not check if parent containers have the value', () => {
+      const container = new Container()
+      const child = container.extend()
+      container.constant('foo', 42)
+      expect(child.hasOwn('foo')).toBe(false)
     })
   })
 })

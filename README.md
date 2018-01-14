@@ -77,6 +77,7 @@ expect(container.get('foo')).toBe(42)
 Checks if a property exists in the container.
 Does not invoke provider functions and returns
 true even if the value in the container is undefined.
+This checks for the value in parent containers as well.
 
 ```javascript
 const container = new Container()
@@ -87,6 +88,20 @@ container.provider('foo', () => {
 })
 expect(container.has('foo')).toBe(true)
 expect(called).toBe(false)
+```
+
+## Container.prototype.hasOwn(key)
+Checks if a property exists in the container.
+Does not invoke provider functions and returns
+true even if the value in the container is undefined.
+Does NOT check parent containers for the key.
+
+```javascript
+const container = new Container()
+const child = container.extend()
+container.constant('foo', 42)
+expect(container.hasOwn('foo')).toBe(true)
+expect(child.hasOwn('foo')).toBe(false)
 ```
 
 ## Cyclic dependencies
