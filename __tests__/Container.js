@@ -401,4 +401,41 @@ describe('Container', () => {
       expect(foo).toBe(44)
     })
   })
+
+  describe('.get(dependency)', () => {
+    it('gets provider values', () => {
+      const container = new Container()
+      container.provider('foo', () => 42)
+      expect(container.get('foo')).toBe(42)
+    })
+
+    it('gets constant values', () => {
+      const container = new Container()
+      container.constant('foo', 42)
+      expect(container.get('foo')).toBe(42)
+    })
+  })
+
+  describe('.has(dependency)', () => {
+    it('checks if provided values exist', () => {
+      const container = new Container()
+      container.provider('foo', () => undefined)
+      expect(container.has('foo')).toBe(true)
+    })
+
+    it('does not call the provider', () => {
+      const container = new Container()
+      let called = false
+      container.provider('foo', () => {
+        called = true
+      })
+      expect(called).toBe(false)
+    })
+
+    it('checks if constant values exist', () => {
+      const container = new Container()
+      container.constant('foo', 42)
+      expect(container.has('foo')).toBe(true)
+    })
+  })
 })

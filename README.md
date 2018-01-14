@@ -64,6 +64,31 @@ childContainer.provider('bar', () => 43)
 expect(childContainer.keys()).toEqual(['bar'])
 ```
 
+## Container.prototype.get(key)
+Gets a given property from the container.
+
+```javascript
+const container = new Container()
+container.provider('foo', () => 42)
+expect(container.get('foo')).toBe(42)
+```
+
+## Container.prototype.has(key)
+Checks if a property exists in the container.
+Does not invoke provider functions and returns
+true even if the value in the container is undefined.
+
+```javascript
+const container = new Container()
+let called
+container.provider('foo', () => {
+  called = true
+  return undefined // Being explicit here
+})
+expect(container.has('foo')).toBe(true)
+expect(called).toBe(false)
+```
+
 ## Cyclic dependencies
 Cyclic dependencies can be resolved with the invoke function.
 It is however a very good idea to prevent cyclic dependencies
