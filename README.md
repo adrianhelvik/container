@@ -109,23 +109,52 @@ Cyclic dependencies can be resolved with the invoke function.
 It is however a very good idea to prevent cyclic dependencies
 in the first place.
 
+An important note here is that the provider function must
+return before invoking the cyclic dependency. This could
+be done either as in the example below, by making the
+values in the container be promises, or by having
+the values be functions, where invoke is used
+in the body of the returned function.
+
+But as a general rule of thumb: *Avoid cyclic dependencies*
+
+### Good example
+
 ```javascript
-container.provider('foo', ({ invoke }) => {
-  return {
-    bar: () => invoke(({ bar }) => bar)
-  }
+container.provider('foo', async ({ invoke }) => {
+  await new Promise(resolve => setTimeout(resolve))
+  const bar = await invoke(({ bar }) => bar)
+  return { bar }
 })
 
-container.provider('bar', ({ invoke }) => {
-  return {
-    foo: () => invoke(({ foo }) => foo)
-  }
+container.provider('bar', async ({ invoke }) => {
+  await new Promise(resolve => setTimeout(resolve))
+  const foo = await invoke(({ foo }) => foo)
+  return { foo }
 })
 
-container.invoke(({ foo, bar }) => {
-  expect(foo.bar()).toBe(bar)
-  expect(bar.foo()).toBe(foo)
+container.invoke(async ({ foo, bar }) => {
+  foo = await foo
+  bar = await bar
+  expect(foo.bar).toBe(bar)
+  expect(bar.foo).toBe(foo)
 })
+```
+
+### Bad example
+
+```javascript
+container.provider('foo', ({ bar }) => {
+  return { bar }
+})
+
+container.provider('bar', ({ foo }) => {
+  return { foo }
+})
+
+expect(() => {
+  container.get('foo')
+}).toThrow(/Maximum call stack size exceeded/)
 ```
 
 # Example

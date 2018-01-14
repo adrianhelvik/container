@@ -131,6 +131,59 @@ describe('Container', () => {
       })
       expect(called).toBe(true)
     })
+
+    it('throws an error on cyclic dependencies', () => {
+      container.provider('foo', ({ invoke }) => {
+        return {
+          bar: invoke(({ bar }) => bar)
+        }
+      })
+
+      container.provider('bar', ({ invoke }) => {
+        return {
+          foo: invoke(({ foo }) => foo)
+        }
+      })
+
+      expect(() => {
+        container.get('foo')
+      }).toThrow(/Maximum call stack size exceeded/)
+    })
+
+    it('throws an error on cyclic dependencies', () => {
+      container.provider('foo', ({ bar }) => {
+        return { bar }
+      })
+
+      container.provider('bar', ({ foo }) => {
+        return { foo }
+      })
+
+      expect(() => {
+        container.get('foo')
+      }).toThrow(/Maximum call stack size exceeded/)
+    })
+
+    it('handles async cyclic dependencies', async () => {
+      container.provider('foo', async ({ invoke }) => {
+        await new Promise(resolve => setTimeout(resolve))
+        const bar = await invoke(({ bar }) => bar)
+        return { bar }
+      })
+
+      container.provider('bar', async ({ invoke }) => {
+        await new Promise(resolve => setTimeout(resolve))
+        const foo = await invoke(({ foo }) => foo)
+        return { foo }
+      })
+
+      container.invoke(async ({ foo, bar }) => {
+        foo = await foo
+        bar = await bar
+        expect(foo.bar).toBe(bar)
+        expect(bar.foo).toBe(foo)
+      })
+    })
   })
 
   describe('.provider(key, provider)', () => {
@@ -224,10 +277,10 @@ describe('Container', () => {
         db(++counter)
       })
 
-      container.dependencies.myProvider
+      container.dependencies.myProvider // eslint-disable-line
       container.redefineConstant('db', newDb)
       container.reloadProvider('myProvider')
-      container.dependencies.myProvider
+      container.dependencies.myProvider // eslint-disable-line
 
       expect(oldDb.$args[0]).toEqual([1])
       expect(newDb.$args[0]).toEqual([2])
@@ -245,10 +298,10 @@ describe('Container', () => {
         db(++counter)
       })
 
-      container.dependencies.myProvider
+      container.dependencies.myProvider // eslint-disable-line
       container.redefineConstant('db', newDb)
       container.reloadAllProviders()
-      container.dependencies.myProvider
+      container.dependencies.myProvider // eslint-disable-line
 
       expect(oldDb.$args[0]).toEqual([1])
       expect(newDb.$args[0]).toEqual([2])
@@ -328,9 +381,9 @@ describe('Container', () => {
       let count = 0
       container.provider('foo', () => ++count)
 
-      container.dependencies.foo
-      container.dependencies.foo
-      container.dependencies.foo
+      container.dependencies.foo // eslint-disable-line
+      container.dependencies.foo // eslint-disable-line
+      container.dependencies.foo // eslint-disable-line
 
       const updatedCount = container.providers.foo()
 
@@ -342,9 +395,9 @@ describe('Container', () => {
       let count = 0
       container.provider('foo', () => ++count)
 
-      container.dependencies.foo
-      container.dependencies.foo
-      container.dependencies.foo
+      container.dependencies.foo // eslint-disable-line
+      container.dependencies.foo // eslint-disable-line
+      container.dependencies.foo // eslint-disable-line
 
       const childContainer = container.extend()
 
