@@ -16,6 +16,8 @@ Adds a new value to the container in the form of a constant value.
 
 ## Container.prototype.invoke(fn: function)
 Invoke the given function with the dependencies in the container.
+This method creates a new container, so that we can use the
+provide method as well.
 
 ```javascript
 const container = new Container()
@@ -24,6 +26,34 @@ container.constant('who', 'world')
 
 container.invoke(({ message }) => {
   console.log(message) // logs 'Hello world'
+})
+```
+
+## Injected: invoke
+The invoke function is injected. It allows you to invoke another
+function with the dependencies of the container as the first
+parameter. A new child container is created to allow providing
+scoped dependencies.
+
+## Injected: provide
+This method lets you provide a dependency into the container.
+It calls `.constant(k, v)` on the current container.
+
+```javascript
+container.invoke(({ invoke, provide }) => {
+  provide('message', 'Hello on the outside')
+
+  invoke(({ invoke, provide }) => {
+    provide('message', 'Hello on the inside')
+
+    invoke(({ message }) => {
+      console.log(message) // Hello on the inside
+    })
+  })
+
+  invoke(({ message }) => {
+    console.log(message) // Hello on the outside
+  })
 })
 ```
 

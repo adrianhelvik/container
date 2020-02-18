@@ -60,7 +60,7 @@ describe('Container', () => {
   })
 
   describe('invoke(fn)', () => {
-    it('calls functions', (done) => {
+    it('calls functions', done => {
       container.invoke(() => {
         done()
       })
@@ -74,11 +74,13 @@ describe('Container', () => {
       expect(called).toBe(true)
     })
 
-    it('provides the dependencies of the container', (done) => {
+    it('provides the dependencies of the container', done => {
+      container.constant('foo', 'bar')
+
       container.invoke(dependencies => {
         try {
           expect(dependencies).toBeDefined()
-          expect(dependencies).toBe(container.dependencies)
+          expect(dependencies.foo).toBe('bar')
           done()
         } catch (error) {
           done.fail(error)
@@ -86,7 +88,7 @@ describe('Container', () => {
       })
     })
 
-    it('can inject constant values', (done) => {
+    it('can inject constant values', done => {
       container.constant('message', 'Hello world')
 
       container.invoke(({ message }) => {
@@ -95,7 +97,7 @@ describe('Container', () => {
       })
     })
 
-    it('can inject providers', (done) => {
+    it('can inject providers', done => {
       container.provider('message', () => 'Hello world')
 
       container.invoke(({ message }) => {
@@ -150,11 +152,11 @@ describe('Container', () => {
       expect(container.dependencies.callCount).toBe(1)
     })
 
-    it('defers calling the provider function until the dependency is needed', (done) => {
+    it('defers calling the provider function until the dependency is needed', done => {
       let called = false
 
       container.provider('pure', () => 'bar')
-      container.provider('sideEffects', () => called = true)
+      container.provider('sideEffects', () => (called = true))
 
       container.invoke(({ pure }) => {
         expect(called).toBe(false)
@@ -209,7 +211,9 @@ describe('Container', () => {
     })
 
     it('throws an error if the container does not have the value', () => {
-      expect(() => container.redefineProvider('foo', () => 1)).toThrow(TypeError)
+      expect(() => container.redefineProvider('foo', () => 1)).toThrow(
+        TypeError,
+      )
     })
   })
 
@@ -261,7 +265,7 @@ describe('Container', () => {
       expect(container.dependencies.foo).toBe('bar')
     })
 
-    it('can provide constants as dependencies', (done) => {
+    it('can provide constants as dependencies', done => {
       container.eagerProvider('eager', ({ message }) => {
         expect(message).toBe('Hello world')
         done()
@@ -269,7 +273,7 @@ describe('Container', () => {
       container.constant('message', 'Hello world')
     })
 
-    it('can provide providers as dependencies', (done) => {
+    it('can provide providers as dependencies', done => {
       container.eagerProvider('eager', ({ message }) => {
         expect(message).toBe('Hello world')
         done()
@@ -358,13 +362,13 @@ describe('Container', () => {
   it('can inject dependencies later to handle cyclic relations', async () => {
     container.provider('foo', ({ invoke }) => {
       return {
-        bar: () => invoke(({ bar }) => bar)
+        bar: () => invoke(({ bar }) => bar),
       }
     })
 
     container.provider('bar', ({ invoke }) => {
       return {
-        foo: () => invoke(({ foo }) => foo)
+        foo: () => invoke(({ foo }) => foo),
       }
     })
 
@@ -399,6 +403,58 @@ describe('Container', () => {
 
     childContainer.invoke(({ foo }) => {
       expect(foo).toBe(44)
+    })
+  })
+
+  describe('provide', () => {
+    it('adds a value to the inner container', () => {
+      let value
+
+      container.invoke(({ invoke, provide }) => {
+        provide('message', 'Hello world')
+
+        invoke(({ message }) => {
+          value = message
+        })
+      })
+
+      expect(value).toBe('Hello world')
+    })
+
+    it('does not pollute the parent container', () => {
+      let value
+
+      container.invoke(({ invoke, provide }) => {
+        provide('message', 'Hello world')
+      })
+
+      container.invoke(({ message }) => {
+        value = message
+      })
+
+      expect(value).toBe(undefined)
+    })
+
+    test('full example', () => {
+      let valueA
+      let valueB
+
+      container.constant('message', 'Foo bar')
+
+      container.invoke(({ provide, invoke }) => {
+        provide('message', 'Hello world')
+
+        invoke(({ message }) => {
+          valueA = message
+        })
+      })
+
+      container.invoke(({ message }) => {
+        valueB = message
+      })
+
+      expect(valueA).toBe('Hello world')
+      expect(valueB).toBe('Foo bar')
     })
   })
 })
