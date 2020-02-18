@@ -528,7 +528,7 @@ describe('Container', () => {
     })
   })
 
-  describe('provide', () => {
+  describe('injected: provide(key, value)', () => {
     it('adds a value to the inner container', () => {
       const container = new Container()
 
@@ -561,16 +561,45 @@ describe('Container', () => {
       expect(value).toBe(undefined)
     })
 
+    it('can not be called in a provider', () => {
+      const container = new Container()
+
+      container.provider('foo', 'original')
+
+      container.provider('faulty', ({ provide }) => {
+        provide('foo', 'bar')
+      })
+
+      expect(() => {
+        container.get('faulty')
+      }).toThrow('Illegal call to injected provide(key, value)')
+    })
+
+    it('can be called in an invoke within a provider', () => {
+      const container = new Container()
+
+      container.provider('okay', ({ invoke }) => {
+        invoke(({ provide }) => {
+          provide('foo', 'bar')
+        })
+      })
+
+      expect(() => {
+        container.get('okay')
+      }).not.toThrow()
+    })
+
     test('full example', () => {
       const container = new Container()
 
       let valueA
       let valueB
 
-      container.constant('message', 'Foo bar')
+      container.provider('message', () => 'Foo bar')
 
       container.invoke(({ provide, invoke }) => {
         provide('message', 'Hello world')
+        provide('foo', 'Hello world')
 
         invoke(({ message }) => {
           valueA = message
