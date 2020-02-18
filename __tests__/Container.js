@@ -1,14 +1,16 @@
 const mock = require('@adrianhelvik/mock')
 const Container = require('../lib/Container')
 
-describe('Container', () => {
-  let container
-  beforeEach(() => {
-    container = new Container()
-  })
+let errors = []
 
+process.on('unhandledRejection', error => {
+  console.error(error.stack)
+})
+
+describe('Container', () => {
   describe('.constant(key, value)', () => {
     it('can store constant values', () => {
+      const container = new Container()
       container.constant('message', 'Hello world')
       expect(container.dependencies.message).toBe('Hello world')
     })
@@ -42,6 +44,7 @@ describe('Container', () => {
     })
 
     it('throws an error if the value exists', () => {
+      const container = new Container()
       container.constant('foo', 1)
       expect(() => container.constant('foo', 2)).toThrow(TypeError)
     })
@@ -49,24 +52,28 @@ describe('Container', () => {
 
   describe('redefineConstant', () => {
     it('redefines the constant in the container', () => {
+      const container = new Container()
       container.constant('foo', 1)
       expect(() => container.redefineConstant('foo', 2)).not.toThrow()
       expect(container.dependencies.foo).toBe(2)
     })
 
     it('throws an error if the container does not have the value', () => {
+      const container = new Container()
       expect(() => container.redefineConstant('foo', 1)).toThrow(TypeError)
     })
   })
 
   describe('invoke(fn)', () => {
     it('calls functions', done => {
+      const container = new Container()
       container.invoke(() => {
         done()
       })
     })
 
     it('calls functions synchronously', () => {
+      const container = new Container()
       let called = false
       container.invoke(() => {
         called = true
@@ -75,6 +82,8 @@ describe('Container', () => {
     })
 
     it('provides the dependencies of the container', done => {
+      const container = new Container()
+
       container.constant('foo', 'bar')
 
       container.invoke(dependencies => {
@@ -89,6 +98,8 @@ describe('Container', () => {
     })
 
     it('can inject constant values', done => {
+      const container = new Container()
+
       container.constant('message', 'Hello world')
 
       container.invoke(({ message }) => {
@@ -98,6 +109,8 @@ describe('Container', () => {
     })
 
     it('can inject providers', done => {
+      const container = new Container()
+
       container.provider('message', () => 'Hello world')
 
       container.invoke(({ message }) => {
@@ -107,6 +120,8 @@ describe('Container', () => {
     })
 
     it('can can be awaited', async () => {
+      const container = new Container()
+
       let called = false
       await container.invoke(() => {
         called = true
@@ -115,6 +130,8 @@ describe('Container', () => {
     })
 
     it('rethrows async errors', async () => {
+      const container = new Container()
+
       try {
         await container.invoke(async () => {
           throw Error('Async error')
@@ -126,6 +143,8 @@ describe('Container', () => {
     })
 
     it('awaits async functions', async () => {
+      const container = new Container()
+
       let called = false
       await container.invoke(async () => {
         await new Promise(resolve => setTimeout(resolve, 10))
@@ -135,6 +154,8 @@ describe('Container', () => {
     })
 
     it('throws an error on cyclic dependencies', () => {
+      const container = new Container()
+
       container.provider('foo', ({ invoke }) => {
         return {
           bar: invoke(({ bar }) => bar),
@@ -149,10 +170,12 @@ describe('Container', () => {
 
       expect(() => {
         container.get('foo')
-      }).toThrow(/Maximum call stack size exceeded/)
+      }).toThrow(/Encountered cyclic dependency/)
     })
 
     it('throws an error on cyclic dependencies', () => {
+      const container = new Container()
+
       container.provider('foo', ({ bar }) => {
         return { bar }
       })
@@ -163,10 +186,12 @@ describe('Container', () => {
 
       expect(() => {
         container.get('foo')
-      }).toThrow(/Maximum call stack size exceeded/)
+      }).toThrow(/Encountered cyclic dependency/)
     })
 
     it('handles async cyclic dependencies', async () => {
+      const container = new Container()
+
       container.provider('foo', async ({ invoke }) => {
         await new Promise(resolve => setTimeout(resolve))
         const bar = await invoke(({ bar }) => bar)
@@ -190,11 +215,15 @@ describe('Container', () => {
 
   describe('.provider(key, provider)', () => {
     it('stores a provider in the container', () => {
+      const container = new Container()
+
       container.provider('message', () => 'Hello world')
       expect(container.dependencies.message).toBe('Hello world')
     })
 
     it('is only invoked once', () => {
+      const container = new Container()
+
       let callCount = 0
 
       container.provider('callCount', () => ++callCount)
@@ -206,6 +235,8 @@ describe('Container', () => {
     })
 
     it('defers calling the provider function until the dependency is needed', done => {
+      const container = new Container()
+
       let called = false
 
       container.provider('pure', () => 'bar')
@@ -249,6 +280,8 @@ describe('Container', () => {
     })
 
     it('throws an error if redifining existing dependency', () => {
+      const container = new Container()
+
       container.provider('foo', () => {})
       expect(() => {
         container.provider('foo', () => {})
@@ -258,12 +291,16 @@ describe('Container', () => {
 
   describe('redefineProvider(key, provider)', () => {
     it('redefines a provider', () => {
+      const container = new Container()
+
       container.provider('foo', () => 1)
       expect(() => container.redefineProvider('foo', () => 2)).not.toThrow()
       expect(container.dependencies.foo).toBe(2)
     })
 
     it('throws an error if the container does not have the value', () => {
+      const container = new Container()
+
       expect(() => container.redefineProvider('foo', () => 1)).toThrow(
         TypeError,
       )
@@ -272,6 +309,8 @@ describe('Container', () => {
 
   describe('reloadProvider(key)', () => {
     it('reloads a provider', () => {
+      const container = new Container()
+
       const oldDb = mock()
       const newDb = mock()
       let counter = 0
@@ -293,6 +332,8 @@ describe('Container', () => {
 
   describe('reloadAllProviders()', () => {
     test('it reloads a provider', () => {
+      const container = new Container()
+
       const oldDb = mock()
       const newDb = mock()
       let counter = 0
@@ -314,11 +355,15 @@ describe('Container', () => {
 
   describe('.eagerProvider(key, value)', () => {
     it('stores a provider in the container', () => {
+      const container = new Container()
+
       container.eagerProvider('foo', () => 'bar')
       expect(container.dependencies.foo).toBe('bar')
     })
 
     it('can provide constants as dependencies', done => {
+      const container = new Container()
+
       container.eagerProvider('eager', ({ message }) => {
         expect(message).toBe('Hello world')
         done()
@@ -327,6 +372,8 @@ describe('Container', () => {
     })
 
     it('can provide providers as dependencies', done => {
+      const container = new Container()
+
       container.eagerProvider('eager', ({ message }) => {
         expect(message).toBe('Hello world')
         done()
@@ -337,10 +384,14 @@ describe('Container', () => {
 
   describe('.extend()', () => {
     it('returns a new Container instance', () => {
+      const container = new Container()
+
       expect(container.extend() instanceof Container).toBe(true)
     })
 
     it('looks up values in the parent container', () => {
+      const container = new Container()
+
       container.constant('foo', 'bar')
       const childContainer = container.extend()
 
@@ -348,6 +399,8 @@ describe('Container', () => {
     })
 
     it('prefers values in the current container', () => {
+      const container = new Container()
+
       container.constant('foo', 'bar')
       const childContainer = container.extend()
       childContainer.constant('foo', 'Hello world')
@@ -356,6 +409,8 @@ describe('Container', () => {
     })
 
     it('does not overwrite values in the parent container', () => {
+      const container = new Container()
+
       container.constant('foo', 'bar')
       const childContainer = container.extend()
       childContainer.constant('foo', 'Hello world')
@@ -365,14 +420,20 @@ describe('Container', () => {
   })
 
   test('hasOwnProperty is not in the dependencies by default', () => {
+    const container = new Container()
+
     expect(container.dependencies.hasOwnProperty).not.toBeDefined()
   })
 
   test('hasOwnProperty is not in the providers by default', () => {
+    const container = new Container()
+
     expect(container.providers.hasOwnProperty).not.toBeDefined()
   })
 
   test('Object.keys returns keys for all values in the container', () => {
+    const container = new Container()
+
     container.constant('a', null)
     container.provider('b', () => {})
     container.eagerProvider('c', () => {})
@@ -382,6 +443,8 @@ describe('Container', () => {
 
   describe('.providers', () => {
     test('you can access the providers (not the provider results) from the container', () => {
+      const container = new Container()
+
       let count = 0
       container.provider('foo', () => ++count)
 
@@ -396,6 +459,8 @@ describe('Container', () => {
     })
 
     test('you can access the providers (not the provider results) from a child container', () => {
+      const container = new Container()
+
       let count = 0
       container.provider('foo', () => ++count)
 
@@ -413,6 +478,8 @@ describe('Container', () => {
   })
 
   it('can inject dependencies later to handle cyclic relations', async () => {
+    const container = new Container()
+
     container.provider('foo', ({ invoke }) => {
       return {
         bar: () => invoke(({ bar }) => bar),
@@ -433,6 +500,8 @@ describe('Container', () => {
 
   describe('.keys()', () => {
     it('returns the keys in the current container', () => {
+      const container = new Container()
+
       container.provider('foo', () => 42)
       const childContainer = container.extend()
       childContainer.provider('bar', () => 43)
@@ -461,6 +530,8 @@ describe('Container', () => {
 
   describe('provide', () => {
     it('adds a value to the inner container', () => {
+      const container = new Container()
+
       let value
 
       container.invoke(({ invoke, provide }) => {
@@ -475,6 +546,8 @@ describe('Container', () => {
     })
 
     it('does not pollute the parent container', () => {
+      const container = new Container()
+
       let value
 
       container.invoke(({ invoke, provide }) => {
@@ -489,6 +562,8 @@ describe('Container', () => {
     })
 
     test('full example', () => {
+      const container = new Container()
+
       let valueA
       let valueB
 
@@ -585,5 +660,17 @@ describe('Container', () => {
       container.constant('foo', 42)
       expect(child.hasOwn('foo')).toBe(false)
     })
+  })
+
+  it('throws a meaningful error if you have a cyclic dependency', () => {
+    const container = new Container()
+    // foo -> bar -> baz -> foo
+    container.provider('foo', ({ bar }) => {})
+    container.provider('bar', ({ baz }) => {})
+    container.provider('baz', ({ foo }) => {})
+
+    expect(() => container.get('foo')).toThrow(
+      'Encountered cyclic dependency: foo -> bar -> baz -> foo',
+    )
   })
 })
