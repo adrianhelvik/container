@@ -94,28 +94,97 @@ childContainer.provider('bar', () => 43)
 expect(childContainer.keys()).toEqual(['bar'])
 ```
 
+## Container.prototype.get(key)
+Gets a given property from the container.
+
+```javascript
+const container = new Container()
+container.provider('foo', () => 42)
+expect(container.get('foo')).toBe(42)
+```
+
+## Container.prototype.has(key)
+Checks if a property exists in the container.
+Does not invoke provider functions and returns
+true even if the value in the container is undefined.
+This checks for the value in parent containers as well.
+
+```javascript
+const container = new Container()
+let called
+container.provider('foo', () => {
+  called = true
+  return undefined // Being explicit here
+})
+expect(container.has('foo')).toBe(true)
+expect(called).toBe(false)
+```
+
+## Container.prototype.hasOwn(key)
+Checks if a property exists in the container.
+Does not invoke provider functions and returns
+true even if the value in the container is undefined.
+Does NOT check parent containers for the key.
+
+```javascript
+const container = new Container()
+const child = container.extend()
+container.constant('foo', 42)
+expect(container.hasOwn('foo')).toBe(true)
+expect(child.hasOwn('foo')).toBe(false)
+```
+
 ## Cyclic dependencies
 Cyclic dependencies can be resolved with the invoke function.
 It is however a very good idea to prevent cyclic dependencies
 in the first place.
 
+An important note here is that the provider function must
+return before invoking the cyclic dependency. This could
+be done either as in the example below, by making the
+values in the container be promises, or by having
+the values be functions, where invoke is used
+in the body of the returned function.
+
+But as a general rule of thumb: *Avoid cyclic dependencies*
+
+### Good example
+
 ```javascript
-container.provider('foo', ({ invoke }) => {
-  return {
-    bar: () => invoke(({ bar }) => bar)
-  }
+container.provider('foo', async ({ invoke }) => {
+  await new Promise(resolve => setTimeout(resolve))
+  const bar = await invoke(({ bar }) => bar)
+  return { bar }
 })
 
-container.provider('bar', ({ invoke }) => {
-  return {
-    foo: () => invoke(({ foo }) => foo)
-  }
+container.provider('bar', async ({ invoke }) => {
+  await new Promise(resolve => setTimeout(resolve))
+  const foo = await invoke(({ foo }) => foo)
+  return { foo }
 })
 
-container.invoke(({ foo, bar }) => {
-  expect(foo.bar()).toBe(bar)
-  expect(bar.foo()).toBe(foo)
+container.invoke(async ({ foo, bar }) => {
+  foo = await foo
+  bar = await bar
+  expect(foo.bar).toBe(bar)
+  expect(bar.foo).toBe(foo)
 })
+```
+
+### Bad example
+
+```javascript
+container.provider('foo', ({ bar }) => {
+  return { bar }
+})
+
+container.provider('bar', ({ foo }) => {
+  return { foo }
+})
+
+expect(() => {
+  container.get('foo')
+}).toThrow(/Maximum call stack size exceeded/)
 ```
 
 # Example

@@ -133,6 +133,59 @@ describe('Container', () => {
       })
       expect(called).toBe(true)
     })
+
+    it('throws an error on cyclic dependencies', () => {
+      container.provider('foo', ({ invoke }) => {
+        return {
+          bar: invoke(({ bar }) => bar),
+        }
+      })
+
+      container.provider('bar', ({ invoke }) => {
+        return {
+          foo: invoke(({ foo }) => foo),
+        }
+      })
+
+      expect(() => {
+        container.get('foo')
+      }).toThrow(/Maximum call stack size exceeded/)
+    })
+
+    it('throws an error on cyclic dependencies', () => {
+      container.provider('foo', ({ bar }) => {
+        return { bar }
+      })
+
+      container.provider('bar', ({ foo }) => {
+        return { foo }
+      })
+
+      expect(() => {
+        container.get('foo')
+      }).toThrow(/Maximum call stack size exceeded/)
+    })
+
+    it('handles async cyclic dependencies', async () => {
+      container.provider('foo', async ({ invoke }) => {
+        await new Promise(resolve => setTimeout(resolve))
+        const bar = await invoke(({ bar }) => bar)
+        return { bar }
+      })
+
+      container.provider('bar', async ({ invoke }) => {
+        await new Promise(resolve => setTimeout(resolve))
+        const foo = await invoke(({ foo }) => foo)
+        return { foo }
+      })
+
+      container.invoke(async ({ foo, bar }) => {
+        foo = await foo
+        bar = await bar
+        expect(foo.bar).toBe(bar)
+        expect(bar.foo).toBe(foo)
+      })
+    })
   })
 
   describe('.provider(key, provider)', () => {
@@ -228,10 +281,10 @@ describe('Container', () => {
         db(++counter)
       })
 
-      container.dependencies.myProvider
+      container.dependencies.myProvider // eslint-disable-line
       container.redefineConstant('db', newDb)
       container.reloadProvider('myProvider')
-      container.dependencies.myProvider
+      container.dependencies.myProvider // eslint-disable-line
 
       expect(oldDb.$args[0]).toEqual([1])
       expect(newDb.$args[0]).toEqual([2])
@@ -249,10 +302,10 @@ describe('Container', () => {
         db(++counter)
       })
 
-      container.dependencies.myProvider
+      container.dependencies.myProvider // eslint-disable-line
       container.redefineConstant('db', newDb)
       container.reloadAllProviders()
-      container.dependencies.myProvider
+      container.dependencies.myProvider // eslint-disable-line
 
       expect(oldDb.$args[0]).toEqual([1])
       expect(newDb.$args[0]).toEqual([2])
@@ -332,9 +385,9 @@ describe('Container', () => {
       let count = 0
       container.provider('foo', () => ++count)
 
-      container.dependencies.foo
-      container.dependencies.foo
-      container.dependencies.foo
+      container.dependencies.foo // eslint-disable-line
+      container.dependencies.foo // eslint-disable-line
+      container.dependencies.foo // eslint-disable-line
 
       const updatedCount = container.providers.foo()
 
@@ -346,9 +399,9 @@ describe('Container', () => {
       let count = 0
       container.provider('foo', () => ++count)
 
-      container.dependencies.foo
-      container.dependencies.foo
-      container.dependencies.foo
+      container.dependencies.foo // eslint-disable-line
+      container.dependencies.foo // eslint-disable-line
+      container.dependencies.foo // eslint-disable-line
 
       const childContainer = container.extend()
 
@@ -455,6 +508,82 @@ describe('Container', () => {
 
       expect(valueA).toBe('Hello world')
       expect(valueB).toBe('Foo bar')
+    })
+  })
+
+  describe('.get(key)', () => {
+    it('gets provider values', () => {
+      const container = new Container()
+      container.provider('foo', () => 42)
+      expect(container.get('foo')).toBe(42)
+    })
+
+    it('gets constant values', () => {
+      const container = new Container()
+      container.constant('foo', 42)
+      expect(container.get('foo')).toBe(42)
+    })
+  })
+
+  describe('.has(key)', () => {
+    it('checks if provided values exist', () => {
+      const container = new Container()
+      container.provider('foo', () => undefined)
+      expect(container.has('foo')).toBe(true)
+    })
+
+    it('does not call the provider', () => {
+      const container = new Container()
+      let called = false
+      container.provider('foo', () => {
+        called = true
+      })
+      container.has('foo')
+      expect(called).toBe(false)
+    })
+
+    it('checks if constant values exist', () => {
+      const container = new Container()
+      container.constant('foo', 42)
+      expect(container.has('foo')).toBe(true)
+    })
+
+    it('checks if parent containers have the value', () => {
+      const container = new Container()
+      const child = container.extend()
+      container.constant('foo', 42)
+      expect(child.has('foo')).toBe(true)
+    })
+  })
+
+  describe('.hasOwn(key)', () => {
+    it('checks if provided values exist', () => {
+      const container = new Container()
+      container.provider('foo', () => undefined)
+      expect(container.hasOwn('foo')).toBe(true)
+    })
+
+    it('does not call the provider', () => {
+      const container = new Container()
+      let called = false
+      container.provider('foo', () => {
+        called = true
+      })
+      container.hasOwn('foo')
+      expect(called).toBe(false)
+    })
+
+    it('checks if constant values exist', () => {
+      const container = new Container()
+      container.constant('foo', 42)
+      expect(container.hasOwn('foo')).toBe(true)
+    })
+
+    it('does not check if parent containers have the value', () => {
+      const container = new Container()
+      const child = container.extend()
+      container.constant('foo', 42)
+      expect(child.hasOwn('foo')).toBe(false)
     })
   })
 })
