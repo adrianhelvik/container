@@ -2,3 +2,5 @@
 /coverage/
 *.swo
 *.swp
+yarn.lock
+package-lock.json
