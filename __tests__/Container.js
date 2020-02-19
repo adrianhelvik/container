@@ -364,8 +364,8 @@ describe('Container', () => {
     it('can provide constants as dependencies', done => {
       const container = new Container()
 
-      container.eagerProvider('eager', ({ message }) => {
-        expect(message).toBe('Hello world')
+      container.eagerProvider('eager', deps => {
+        expect(deps.message).toBe('Hello world')
         done()
       })
       container.constant('message', 'Hello world')
@@ -528,14 +528,14 @@ describe('Container', () => {
     })
   })
 
-  describe('injected: provide(key, value)', () => {
+  describe('injected: constant(key, value)', () => {
     it('adds a value to the inner container', () => {
       const container = new Container()
 
       let value
 
-      container.invoke(({ invoke, provide }) => {
-        provide('message', 'Hello world')
+      container.invoke(({ invoke, constant }) => {
+        constant('message', 'Hello world')
 
         invoke(({ message }) => {
           value = message
@@ -550,8 +550,8 @@ describe('Container', () => {
 
       let value
 
-      container.invoke(({ invoke, provide }) => {
-        provide('message', 'Hello world')
+      container.invoke(({ invoke, constant }) => {
+        constant('message', 'Hello world')
       })
 
       container.invoke(({ message }) => {
@@ -561,26 +561,12 @@ describe('Container', () => {
       expect(value).toBe(undefined)
     })
 
-    it('can not be called in a provider', () => {
-      const container = new Container()
-
-      container.provider('foo', 'original')
-
-      container.provider('faulty', ({ provide }) => {
-        provide('foo', 'bar')
-      })
-
-      expect(() => {
-        container.get('faulty')
-      }).toThrow('Illegal call to injected provide(key, value)')
-    })
-
     it('can be called in an invoke within a provider', () => {
       const container = new Container()
 
       container.provider('okay', ({ invoke }) => {
-        invoke(({ provide }) => {
-          provide('foo', 'bar')
+        invoke(({ constant }) => {
+          constant('foo', 'bar')
         })
       })
 
@@ -597,9 +583,9 @@ describe('Container', () => {
 
       container.provider('message', () => 'Foo bar')
 
-      container.invoke(({ provide, invoke }) => {
-        provide('message', 'Hello world')
-        provide('foo', 'Hello world')
+      container.invoke(({ constant, invoke }) => {
+        constant('message', 'Hello world')
+        constant('foo', 'Hello world')
 
         invoke(({ message }) => {
           valueA = message
@@ -701,9 +687,5 @@ describe('Container', () => {
     expect(() => container.get('foo')).toThrow(
       'Encountered cyclic dependency: foo -> bar -> baz -> foo',
     )
-  })
-
-  test('[coverage] .preventProviding defaults to false', () => {
-    expect(new Container().preventProviding()).toBe(false)
   })
 })

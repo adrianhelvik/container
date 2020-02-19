@@ -1,2 +1,9 @@
-exports = module.exports = require('./lib/Container')
-exports.invoke = require('./lib/invoke')
+const Container = require('./lib/Container')
+
+module.exports = function invoke(fn) {
+  return new Container().get('invoke')(fn)
+}
+
+module.exports.async = fn => {
+  return new Container().get('invoke').async(fn)
+}
