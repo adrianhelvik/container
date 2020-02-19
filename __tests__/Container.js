@@ -702,4 +702,8 @@ describe('Container', () => {
       'Encountered cyclic dependency: foo -> bar -> baz -> foo',
     )
   })
+
+  test('[coverage] .preventProviding defaults to false', () => {
+    expect(new Container().preventProviding()).toBe(false)
+  })
 })
